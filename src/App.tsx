@@ -234,22 +234,6 @@ export default function App() {
           </div>
         )}
 
-        {/* Floating Creator Home Link on Shared View (hidden when password gate is active) */}
-        {activeTab === 'shared-letter' && (!letterToRender.hasPassword || isEnvelopeOpened) && (
-          <div className="fixed bottom-4 left-4 z-40">
-            <button
-              onClick={() => {
-                // Clear URL param if going home
-                window.history.pushState({}, '', window.location.pathname.replace(/\/love\/.*$/, '/').replace(/\?.*$/, ''));
-                setActiveTab('create');
-              }}
-              className="px-3.5 py-2 rounded-full bg-black/80 backdrop-blur-md border border-rose-900/60 text-xs text-rose-300 hover:text-white transition-colors shadow-lg flex items-center gap-2 font-cinzel"
-            >
-              <GothicLogo size="sm" showSubtitle={false} />
-            </button>
-          </div>
-        )}
-
         {/* Main Content: Either Envelope or Letter Presentation */}
         <div className="relative z-10 min-h-screen flex flex-col justify-center">
           {!isEnvelopeOpened ? (
