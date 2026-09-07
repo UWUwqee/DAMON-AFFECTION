@@ -71,7 +71,7 @@ export const CreatorDashboard: React.FC<Props> = ({
   };
 
   const totalLetters = letters.length;
-  const approvedLetters = letters.filter((l) => l.status === 'approved').length;
+  const approvedLetters = letters.filter((l) => l.recipientResponse?.approved === true || l.status === 'approved').length;
   const openedLetters = letters.filter((l) => l.status === 'opened').length;
   const totalViews = letters.reduce((acc, l) => acc + (l.viewCount || 0), 0);
 
@@ -232,7 +232,9 @@ export const CreatorDashboard: React.FC<Props> = ({
         ) : (
           letters.map((letter) => {
             const themeConfig = THEMES[letter.theme] || THEMES['blooming-heart'];
-            const isApproved = letter.status === 'approved';
+            const hasResponse = Boolean(letter.recipientResponse);
+            const isApproved = letter.recipientResponse?.approved === true || letter.status === 'approved';
+            const isDeclined = hasResponse && !isApproved;
             const isOpened = letter.status === 'opened';
 
             return (
@@ -241,6 +243,8 @@ export const CreatorDashboard: React.FC<Props> = ({
                 className={`p-5 sm:p-6 rounded-3xl border transition-all duration-300 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md ${
                   isApproved 
                     ? 'border-rose-300 dark:border-rose-900/60 shadow-lg shadow-rose-500/5 ring-1 ring-rose-400/20' 
+                    : isDeclined
+                      ? 'border-slate-300 dark:border-slate-700 shadow-lg shadow-slate-500/5 ring-1 ring-slate-400/20'
                     : 'border-neutral-200 dark:border-neutral-800/90 hover:border-neutral-300 dark:hover:border-neutral-700'
                 }`}
               >
@@ -261,6 +265,11 @@ export const CreatorDashboard: React.FC<Props> = ({
                         <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-400 text-xs font-semibold font-sans-clean animate-pulse-subtle">
                           <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" />
                           <span>Approved by {letter.recipientName}!</span>
+                        </span>
+                      ) : isDeclined ? (
+                        <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-slate-500/10 text-slate-600 dark:text-slate-300 text-xs font-semibold font-sans-clean">
+                          <MessageSquareHeart className="w-3.5 h-3.5" />
+                          <span>Recipient responded</span>
                         </span>
                       ) : isOpened ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[11px] font-medium font-sans-clean">
@@ -312,18 +321,18 @@ export const CreatorDashboard: React.FC<Props> = ({
                     )}
 
                     {/* Sweet response box if approved */}
-                    {isApproved && letter.recipientResponse && (
-                      <div className="mt-3 p-3 rounded-2xl bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 flex items-start gap-2.5">
-                        <span className="text-2xl">{letter.recipientResponse.reactionEmoji || '❤️'}</span>
+                    {hasResponse && letter.recipientResponse && (
+                      <div className={`mt-3 p-3 rounded-2xl border flex items-start gap-2.5 ${isApproved ? 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50' : 'bg-slate-50/80 dark:bg-slate-950/30 border-slate-200 dark:border-slate-800'}`}>
+                        <span className="text-2xl">{letter.recipientResponse.reactionEmoji || (isApproved ? '❤️' : '💔')}</span>
                         <div>
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-300 font-sans-clean block">
-                            Recipient's Reply
+                          <span className={`text-[11px] font-bold uppercase tracking-wider font-sans-clean block ${isApproved ? 'text-rose-700 dark:text-rose-300' : 'text-slate-600 dark:text-slate-300'}`}>
+                            {isApproved ? 'Recipient Accepted' : 'Recipient Declined'}
                           </span>
                           <p className="text-xs font-cormorant italic text-sm text-neutral-800 dark:text-neutral-200">
                             "{letter.recipientResponse.message}"
                           </p>
                           <span className="text-[10px] text-neutral-400 font-sans-clean block mt-0.5">
-                            Approved at {new Date(letter.recipientResponse.respondedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            Responded at {new Date(letter.recipientResponse.respondedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
                       </div>

@@ -200,11 +200,16 @@ export async function markLetterOpened(id: string): Promise<LetterData | null> {
   return null;
 }
 
-export async function submitRecipientResponse(id: string, reactionEmoji: string, message: string): Promise<LetterData | null> {
+export async function submitRecipientResponse(
+  id: string,
+  reactionEmoji: string,
+  message: string,
+  approved: boolean
+): Promise<LetterData | null> {
   const response: RecipientResponse = {
-    approved: true,
+    approved,
     reactionEmoji: reactionEmoji || '❤️',
-    message: message || 'I accept with all my heart!',
+    message: message || (approved ? 'I accept with all my heart!' : 'I am sorry, but my heart is not ready to accept this letter.'),
     respondedAt: new Date().toISOString()
   };
 
@@ -229,7 +234,7 @@ export async function submitRecipientResponse(id: string, reactionEmoji: string,
     const res = await fetch(`/api/letters/${id}/respond`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reactionEmoji, message }),
+      body: JSON.stringify({ reactionEmoji, message, approved }),
       signal: AbortSignal.timeout(2500)
     });
     if (res.ok && !firestoreUpdated) {
@@ -245,7 +250,7 @@ export async function submitRecipientResponse(id: string, reactionEmoji: string,
 
   const local = getLocalLetters().find((l) => l.id === id);
   if (local) {
-    local.status = 'approved';
+    local.status = approved ? 'approved' : 'declined';
     local.recipientResponse = response;
     saveLocalLetter(local);
     return local;

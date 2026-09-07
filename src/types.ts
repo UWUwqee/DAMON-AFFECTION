@@ -3,7 +3,12 @@ export type ThemeId =
   | 'starlit-promise'
   | 'warmth-of-us'
   | 'seasons-of-love'
-  | 'ocean-of-my-heart';
+  | 'ocean-of-my-heart'
+  | 'moonlit-garden'
+  | 'sunset-postcard'
+  | 'paper-cranes'
+  | 'rosewater-rain'
+  | 'honeyed-morning';
 
 export type EnvelopeSeal = 
   | 'wax-heart'
@@ -55,7 +60,7 @@ export interface LetterData {
   viewCount: number;
   firstOpenedAt?: string;
   lastOpenedAt?: string;
-  status: 'unread' | 'opened' | 'approved';
+  status: 'unread' | 'opened' | 'approved' | 'declined';
   recipientResponse?: RecipientResponse;
   hasPassword?: boolean;
   password?: string;

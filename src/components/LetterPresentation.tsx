@@ -10,6 +10,7 @@ import {
   VolumeX, 
   Sparkles, 
   CheckCircle, 
+  XCircle,
   ChevronLeft, 
   ChevronRight
 } from 'lucide-react';
@@ -114,16 +115,19 @@ export const LetterPresentation: React.FC<Props> = ({
     }
   };
 
-  const handleApprove = async () => {
+  const handleRespond = async (approved: boolean) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
+    const responseMessage = approvalNote || (approved
+      ? 'I accept with all my heart ❤️'
+      : 'I am sorry, but my heart is not ready to accept this letter.');
     const optimisticLetter: LetterData = {
       ...currentLetter,
-      status: 'approved',
+      status: approved ? 'approved' : 'declined',
       recipientResponse: {
-        approved: true,
+        approved,
         reactionEmoji: selectedReaction || '❤️',
-        message: approvalNote || 'I accept with all my heart ❤️',
+        message: responseMessage,
         respondedAt: new Date().toISOString()
       }
     };
@@ -132,13 +136,16 @@ export const LetterPresentation: React.FC<Props> = ({
     setCurrentLetter(optimisticLetter);
     onUpdateLetter?.(optimisticLetter);
     try {
-      romanticAudio.playApprovalChime();
-      setShowCelebration(true);
+      if (approved) {
+        romanticAudio.playApprovalChime();
+        setShowCelebration(true);
+      }
 
       const updated = await submitRecipientResponse(
         currentLetter.id,
         selectedReaction,
-        approvalNote || 'I accept with all my heart ❤️'
+        responseMessage,
+        approved
       );
 
       if (updated) {
@@ -351,20 +358,30 @@ export const LetterPresentation: React.FC<Props> = ({
         {/* -------------------- DEDICATED LAST PAGE: RECIPIENT RESPONSE -------------------- */}
         {isResponsePage && (
           <div className="py-4 animate-fade-in">
-            {currentLetter.status === 'approved' && currentLetter.recipientResponse ? (
-              /* Already Approved State */
+            {currentLetter.recipientResponse ? (
+              /* Already Answered State */
               <div className="text-center py-6">
-                <div className="w-16 h-16 mx-auto rounded-full bg-rose-100 dark:bg-rose-950/60 border-2 border-rose-500 flex items-center justify-center text-4xl mb-4 shadow-lg animate-bounce" style={{ animationDuration: '2.5s' }}>
+                <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 shadow-lg ${
+                  currentLetter.recipientResponse.approved
+                    ? 'bg-rose-100 dark:bg-rose-950/60 border-2 border-rose-500 animate-bounce'
+                    : 'bg-slate-100 dark:bg-slate-950/60 border-2 border-slate-400'
+                }`} style={{ animationDuration: '2.5s' }}>
                   {currentLetter.recipientResponse.reactionEmoji || '💖'}
                 </div>
                 
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-semibold uppercase tracking-wider mb-2 font-cinzel">
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  <span>Heart Seal Delivered & Approved</span>
+                <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-2 font-cinzel ${
+                  currentLetter.recipientResponse.approved
+                    ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                    : 'bg-slate-500/10 text-slate-600 dark:text-slate-300'
+                }`}>
+                  {currentLetter.recipientResponse.approved
+                    ? <CheckCircle className="w-3.5 h-3.5" />
+                    : <XCircle className="w-3.5 h-3.5" />}
+                  <span>{currentLetter.recipientResponse.approved ? 'Heart Seal Delivered & Approved' : 'Heart Response Delivered'}</span>
                 </div>
 
-                <h3 className="text-2xl sm:text-3xl font-vibes text-rose-600 dark:text-rose-400 mt-1">
-                  Your Heart Has Answered!
+                <h3 className={`text-2xl sm:text-3xl font-vibes mt-1 ${currentLetter.recipientResponse.approved ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-200'}`}>
+                  {currentLetter.recipientResponse.approved ? 'Your Heart Has Answered!' : 'Your Honest Answer Was Sent'}
                 </h3>
 
                 {currentLetter.recipientResponse.message && (
@@ -440,16 +457,25 @@ export const LetterPresentation: React.FC<Props> = ({
                   />
                 </div>
 
-                {/* Approve & Send Love Back Button */}
-                <div className="flex justify-center mb-6">
+                {/* Accept or decline response actions */}
+                <div className="flex flex-col sm:flex-row justify-center gap-3 mb-6">
                   <button
                     type="button"
-                    onClick={handleApprove}
+                    onClick={() => handleRespond(false)}
                     disabled={isSubmitting}
-                    className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-gradient-to-r from-rose-600 via-pink-600 to-rose-500 hover:from-rose-500 hover:to-pink-500 text-white text-xs sm:text-sm tracking-wider shadow-xl shadow-rose-600/35 hover:shadow-rose-600/55 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 font-cinzel font-bold disabled:opacity-60 uppercase"
+                    className="w-full sm:w-auto px-7 py-3.5 rounded-full border border-slate-400/70 bg-slate-500/10 hover:bg-slate-500/20 text-slate-700 dark:text-slate-200 text-xs sm:text-sm tracking-wider transition-all flex items-center justify-center gap-2.5 font-cinzel font-bold disabled:opacity-60 uppercase"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    <span>{isSubmitting ? 'Sending...' : 'Decline'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRespond(true)}
+                    disabled={isSubmitting}
+                    className="w-full sm:w-auto px-7 py-3.5 rounded-full bg-gradient-to-r from-rose-600 via-pink-600 to-rose-500 hover:from-rose-500 hover:to-pink-500 text-white text-xs sm:text-sm tracking-wider shadow-xl shadow-rose-600/35 hover:shadow-rose-600/55 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 font-cinzel font-bold disabled:opacity-60 uppercase"
                   >
                     <Heart className="w-4 h-4 fill-white" />
-                    <span>{isSubmitting ? 'Sealing with love...' : 'Approve & Send Love Back'}</span>
+                    <span>{isSubmitting ? 'Sending...' : 'Accept & Send Love Back'}</span>
                     <Send className="w-3.5 h-3.5" />
                   </button>
                 </div>

@@ -85,6 +85,91 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
     musicDescription: '',
     iconName: 'Waves',
     envelopeColor: 'bg-gradient-to-br from-teal-900 to-cyan-950'
+  },
+  'moonlit-garden': {
+    id: 'moonlit-garden',
+    name: 'Moonlit Garden',
+    tagline: 'Quiet & Enchanted',
+    mood: 'Gentle, secret, hopeful, magical',
+    bestFor: 'Private confessions, quiet nights, tender promises',
+    bgGradient: 'from-emerald-950 via-teal-950 to-slate-950',
+    accentColor: '#facc15',
+    primaryTextColor: 'text-emerald-50',
+    letterBg: 'bg-emerald-950/75 backdrop-blur-lg',
+    letterBorder: 'border-yellow-400/25 shadow-emerald-500/20',
+    fontFamily: 'font-cormorant',
+    musicName: 'Kalapastangan — fitterkarma',
+    musicDescription: '',
+    iconName: 'Moon',
+    envelopeColor: 'bg-gradient-to-br from-emerald-900 to-teal-950'
+  },
+  'sunset-postcard': {
+    id: 'sunset-postcard',
+    name: 'Sunset Postcard',
+    tagline: 'Golden & Nostalgic',
+    mood: 'Warm, nostalgic, radiant, adventurous',
+    bestFor: 'Travel memories, first dates, golden-hour love',
+    bgGradient: 'from-rose-950 via-orange-800 to-amber-500',
+    accentColor: '#fb923c',
+    primaryTextColor: 'text-orange-50',
+    letterBg: 'bg-orange-950/70 backdrop-blur-md',
+    letterBorder: 'border-orange-300/30 shadow-orange-500/20',
+    fontFamily: 'font-playfair',
+    musicName: 'Kalapastangan — fitterkarma',
+    musicDescription: '',
+    iconName: 'Sun',
+    envelopeColor: 'bg-gradient-to-br from-rose-800 to-orange-700'
+  },
+  'paper-cranes': {
+    id: 'paper-cranes',
+    name: 'Paper Cranes',
+    tagline: 'Light & Hopeful',
+    mood: 'Airy, sincere, optimistic, devoted',
+    bestFor: 'New beginnings, long-distance love, hopeful wishes',
+    bgGradient: 'from-sky-100 via-cyan-100 to-teal-200 dark:from-slate-900 dark:via-cyan-950 dark:to-teal-900',
+    accentColor: '#0891b2',
+    primaryTextColor: 'text-cyan-950 dark:text-cyan-50',
+    letterBg: 'bg-white/75 dark:bg-cyan-950/65 backdrop-blur-md',
+    letterBorder: 'border-cyan-300/60 dark:border-cyan-400/25 shadow-cyan-500/20',
+    fontFamily: 'font-cormorant',
+    musicName: 'Kalapastangan — fitterkarma',
+    musicDescription: '',
+    iconName: 'Wind',
+    envelopeColor: 'bg-gradient-to-br from-cyan-600 to-teal-700'
+  },
+  'rosewater-rain': {
+    id: 'rosewater-rain',
+    name: 'Rosewater Rain',
+    tagline: 'Velvet & Dreamy',
+    mood: 'Intimate, cinematic, tender, reflective',
+    bestFor: 'Deep apologies, late-night thoughts, emotional vows',
+    bgGradient: 'from-slate-950 via-rose-950 to-fuchsia-950',
+    accentColor: '#fb7185',
+    primaryTextColor: 'text-rose-50',
+    letterBg: 'bg-slate-950/75 backdrop-blur-lg',
+    letterBorder: 'border-rose-400/30 shadow-rose-500/20',
+    fontFamily: 'font-cormorant',
+    musicName: 'Kalapastangan — fitterkarma',
+    musicDescription: '',
+    iconName: 'CloudRain',
+    envelopeColor: 'bg-gradient-to-br from-rose-900 to-fuchsia-950'
+  },
+  'honeyed-morning': {
+    id: 'honeyed-morning',
+    name: 'Honeyed Morning',
+    tagline: 'Bright & Grateful',
+    mood: 'Joyful, grateful, sunny, comforting',
+    bestFor: 'Everyday appreciation, gratitude, gentle good mornings',
+    bgGradient: 'from-yellow-50 via-amber-100 to-orange-200 dark:from-amber-950 dark:via-yellow-950 dark:to-stone-900',
+    accentColor: '#f59e0b',
+    primaryTextColor: 'text-amber-950 dark:text-amber-50',
+    letterBg: 'bg-amber-50/85 dark:bg-amber-950/60 backdrop-blur-md',
+    letterBorder: 'border-amber-300/70 dark:border-amber-500/30 shadow-amber-500/20',
+    fontFamily: 'font-playfair',
+    musicName: 'Kalapastangan — fitterkarma',
+    musicDescription: '',
+    iconName: 'Sunrise',
+    envelopeColor: 'bg-gradient-to-br from-amber-500 to-orange-600'
   }
 };
 
@@ -138,5 +223,55 @@ Thank you for growing with me, for listening with patience, and for loving me th
 You bring a peace to my spirit that runs deeper than any trench, and a clarity as pure as sunlit turquoise shallows. 
 
 In a world full of noise, you are my serene tide. Let the currents take us wherever they may, as long as our hands are held tight. My heart belongs to your ocean.`
+  },
+  'moonlit-garden': {
+    title: 'Meet me where the fireflies glow',
+    recipientName: 'My Secret Garden',
+    senderName: 'Always finding my way to you',
+    content: `There is a quiet place in my heart that only opens when I think of you.
+
+You are the small golden light I notice even on the darkest nights, the gentle proof that hope can be soft and still be strong.
+
+If I could choose one place to spend every evening, it would be beside you beneath a patient moon.`
+  },
+  'sunset-postcard': {
+    title: 'Wish you were here',
+    recipientName: 'My Favorite Adventure',
+    senderName: 'Yours, wherever the road leads',
+    content: `Every beautiful view becomes a little brighter because I am already imagining how you would smile at it.
+
+I keep collecting sunsets, small stories, and reasons to come home to you. You make every ordinary journey feel like a memory worth keeping.
+
+Here is my favorite postcard: I love you, and I cannot wait for our next horizon.`
+  },
+  'paper-cranes': {
+    title: 'A wish carried to you',
+    recipientName: 'My Brightest Hope',
+    senderName: 'With a thousand wishes for us',
+    content: `If every paper crane carried one wish, I would fold them all for the same thing: more mornings with you.
+
+You make the future feel less like a distance and more like a place we are already walking toward together.
+
+Wherever life sends us, my heart will keep finding its way back to yours.`
+  },
+  'rosewater-rain': {
+    title: 'After the rain',
+    recipientName: 'The One I Choose',
+    senderName: 'Tenderly and truthfully yours',
+    content: `Some feelings arrive quietly, like rain against the window when the whole world has gone still.
+
+Loving you has taught me that tenderness is not fragile. It is the courage to stay, to listen, and to meet each other honestly.
+
+Even after the hardest weather, I would still choose the garden we grow together.`
+  },
+  'honeyed-morning': {
+    title: 'The sweetest part of my day',
+    recipientName: 'My Everyday Joy',
+    senderName: 'Grateful for you, always',
+    content: `You are the warm light that finds me before I am fully awake, the sweetness hidden inside an ordinary day.
+
+Thank you for every laugh, every patient moment, and every little way you make life feel more like home.
+
+I hope you know that being loved by you is one of my greatest reasons to be grateful.`
   }
 };

@@ -1,7 +1,7 @@
 import React from 'react';
 import { ThemeId } from '../types';
 import { THEMES } from '../data/themes';
-import { Flower2, Sparkles, Flame, Leaf, Waves, Check, Volume2 } from 'lucide-react';
+import { Flower2, Sparkles, Flame, Leaf, Waves, Moon, Sun, Wind, CloudRain, Sunrise, Check, Volume2 } from 'lucide-react';
 import { romanticAudio } from '../audio/romanticAudio';
 
 interface Props {
@@ -22,6 +22,16 @@ export const ThemeSelector: React.FC<Props> = ({ selectedTheme, onSelectTheme })
         return <Leaf className="w-4 h-4 text-amber-600" />;
       case 'ocean-of-my-heart':
         return <Waves className="w-4 h-4 text-teal-400" />;
+      case 'moonlit-garden':
+        return <Moon className="w-4 h-4 text-yellow-400" />;
+      case 'sunset-postcard':
+        return <Sun className="w-4 h-4 text-orange-500" />;
+      case 'paper-cranes':
+        return <Wind className="w-4 h-4 text-cyan-500" />;
+      case 'rosewater-rain':
+        return <CloudRain className="w-4 h-4 text-rose-400" />;
+      case 'honeyed-morning':
+        return <Sunrise className="w-4 h-4 text-amber-500" />;
     }
   };
 

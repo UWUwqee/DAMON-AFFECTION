@@ -168,7 +168,7 @@ export async function submitLetterResponseToFirestore(id: string, response: Reci
   const letterRef = doc(db, 'letters', id);
   await updateDoc(letterRef, {
     recipientResponse: response,
-    status: 'approved',
+    status: response.approved ? 'approved' : 'declined',
     updatedAt: new Date().toISOString()
   });
   const updated = await getDoc(letterRef);

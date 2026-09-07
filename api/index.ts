@@ -35,7 +35,7 @@ interface LetterData {
   viewCount: number;
   firstOpenedAt?: string;
   lastOpenedAt?: string;
-  status: 'unread' | 'opened' | 'approved';
+  status: 'unread' | 'opened' | 'approved' | 'declined';
   recipientResponse?: RecipientResponse;
   hasPassword?: boolean;
   password?: string;
@@ -163,17 +163,19 @@ router.post('/letters/:id/open', (req: Request, res: Response) => {
 // Recipient Responds / Approves Letter
 router.post('/letters/:id/respond', (req: Request, res: Response) => {
   const { id } = req.params;
-  const { reactionEmoji, message } = req.body;
+  const { reactionEmoji, message, approved = true } = req.body;
   const letter = letters[id];
   if (!letter) {
     return res.status(404).json({ error: 'Letter not found' });
   }
 
-  letter.status = 'approved';
+  letter.status = approved ? 'approved' : 'declined';
   letter.recipientResponse = {
-    approved: true,
+    approved: Boolean(approved),
     reactionEmoji: reactionEmoji || '❤️',
-    message: message ? message.trim() : 'I accept with all my heart!',
+    message: message ? message.trim() : approved
+      ? 'I accept with all my heart!'
+      : 'I am sorry, but my heart is not ready to accept this letter.',
     respondedAt: new Date().toISOString()
   };
 
