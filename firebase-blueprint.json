@@ -1,0 +1,54 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Registered creator on Damon's Affection",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "email"]
+    },
+    "Letter": {
+      "title": "Letter",
+      "description": "Love letter created by a creator and viewable by recipient",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "creatorId": { "type": "string" },
+        "title": { "type": "string" },
+        "recipientName": { "type": "string" },
+        "senderName": { "type": "string" },
+        "theme": { "type": "string" },
+        "envelopeSeal": { "type": "string" },
+        "date": { "type": "string" },
+        "content": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "pages": { "type": "array" },
+        "hasPassword": { "type": "boolean" },
+        "password": { "type": "string" },
+        "musicEnabled": { "type": "boolean" },
+        "opened": { "type": "boolean" },
+        "openedAt": { "type": "string" },
+        "response": { "type": "object" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "creatorId", "recipientName", "theme"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile document for creators"
+    },
+    "/letters/{letterId}": {
+      "schema": "Letter",
+      "description": "Love letters collection stored and shared by creators"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Damon’s Affection",
+  "description": "An enchanted romantic platform to craft, animate, and share multi-page personalized love letters with secret passcode seals, gothic elegance, and recipient approval tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

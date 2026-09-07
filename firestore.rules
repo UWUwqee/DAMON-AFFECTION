@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Love letters collection
+    match /letters/{letterId} {
+      // Anyone with the link/letter ID can read the letter
+      allow read: if true;
+
+      // Authenticated users can create letters under their creatorId
+      allow create: if isAuthenticated() && request.resource.data.creatorId == request.auth.uid;
+
+      // Creator can update their own letters, OR recipients can update response, status, and view metrics
+      allow update: if (isAuthenticated() && resource.data.creatorId == request.auth.uid) ||
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['recipientResponse', 'status', 'viewCount', 'firstOpenedAt', 'lastOpenedAt', 'updatedAt', 'response', 'opened', 'openedAt']);
+
+      // Only the creator can delete their letter
+      allow delete: if isAuthenticated() && resource.data.creatorId == request.auth.uid;
+    }
+  }
+}
