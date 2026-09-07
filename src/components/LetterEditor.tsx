@@ -210,10 +210,19 @@ export const LetterEditor: React.FC<Props> = ({
   const handlePublish = async () => {
     setValidationError(null);
 
-    // Validate that at least one page has text
-    const hasAnyContent = pages.some((p) => p.content.trim().length > 0);
-    if (!hasAnyContent) {
-      setValidationError('Please write some heartfelt words on at least one page of your letter!');
+    const missingFields: string[] = [];
+    if (!recipientName.trim()) missingFields.push('Recipient Name');
+    if (!senderName.trim()) missingFields.push('Sender Name');
+    if (!date.trim()) missingFields.push('Date');
+    if (!title.trim()) missingFields.push('Overall Letter Title');
+
+    pages.forEach((page, index) => {
+      if (!page.title?.trim()) missingFields.push(`Page ${index + 1} Heading`);
+      if (!page.content.trim()) missingFields.push(`Page ${index + 1} Words of Devotion`);
+    });
+
+    if (missingFields.length > 0) {
+      setValidationError(`Please complete these required fields before generating your link: ${missingFields.join(', ')}.`);
       return;
     }
 
