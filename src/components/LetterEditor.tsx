@@ -23,12 +23,10 @@ export const LetterEditor: React.FC<Props> = ({
   onPreviewFull
 }) => {
   const [theme, setTheme] = useState<ThemeId>(initialLetter?.theme || 'blooming-heart');
-  const [recipientName, setRecipientName] = useState(initialLetter?.recipientName || 'My Beloved');
-  const [senderName, setSenderName] = useState(initialLetter?.senderName || 'Yours Always');
-  const [date, setDate] = useState(
-    initialLetter?.date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-  );
-  const [title, setTitle] = useState(initialLetter?.title || 'Every Beat Belongs To You');
+  const [recipientName, setRecipientName] = useState(initialLetter?.recipientName || '');
+  const [senderName, setSenderName] = useState(initialLetter?.senderName || '');
+  const [date, setDate] = useState(initialLetter?.date || '');
+  const [title, setTitle] = useState(initialLetter?.title || '');
   
   // Multi-Page state
   const [pages, setPages] = useState<LetterPage[]>(() => {
@@ -39,8 +37,8 @@ export const LetterEditor: React.FC<Props> = ({
       {
         id: 'page-1',
         pageNumber: 1,
-        title: initialLetter?.title || 'Every Beat Belongs To You',
-        content: initialLetter?.content || SAMPLE_LETTERS['blooming-heart'].content
+        title: initialLetter?.title || '',
+        content: initialLetter?.content || ''
       }
     ];
   });
@@ -55,7 +53,7 @@ export const LetterEditor: React.FC<Props> = ({
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const [musicEnabled, setMusicEnabled] = useState(initialLetter?.musicEnabled ?? true);
+  const [musicEnabled, setMusicEnabled] = useState(initialLetter?.musicEnabled ?? false);
   const [envelopeSeal, setEnvelopeSeal] = useState<EnvelopeSeal>(initialLetter?.envelopeSeal || 'wax-heart');
 
   // AI assistant states
