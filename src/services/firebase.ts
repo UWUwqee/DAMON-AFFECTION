@@ -164,17 +164,18 @@ export async function deleteLetterFromFirestore(id: string): Promise<void> {
   }
 }
 
-export async function submitLetterResponseToFirestore(id: string, response: RecipientResponse): Promise<void> {
-  try {
-    const letterRef = doc(db, 'letters', id);
-    await updateDoc(letterRef, {
-      recipientResponse: response,
-      status: 'approved',
-      updatedAt: new Date().toISOString()
-    });
-  } catch (err) {
-    console.warn('Firestore response update error:', err);
+export async function submitLetterResponseToFirestore(id: string, response: RecipientResponse): Promise<LetterData> {
+  const letterRef = doc(db, 'letters', id);
+  await updateDoc(letterRef, {
+    recipientResponse: response,
+    status: 'approved',
+    updatedAt: new Date().toISOString()
+  });
+  const updated = await getDoc(letterRef);
+  if (!updated.exists()) {
+    throw new Error('Letter disappeared after saving recipient response');
   }
+  return updated.data() as LetterData;
 }
 
 export async function markLetterOpenedInFirestore(id: string): Promise<void> {

@@ -26,6 +26,7 @@ export default function App() {
   const [shareModalLetter, setShareModalLetter] = useState<LetterData | null>(null);
   const [selectedThemeForEditor, setSelectedThemeForEditor] = useState<ThemeId>('blooming-heart');
   const [isLoadingShared, setIsLoadingShared] = useState(false);
+  const [hasLoadedShared, setHasLoadedShared] = useState(false);
   const [currentUser, setCurrentUser] = useState<CreatorUser | null>(null);
   const [isAuthInitializing, setIsAuthInitializing] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -91,22 +92,29 @@ export default function App() {
 
   const loadSharedLetter = async (id: string) => {
     setIsLoadingShared(true);
+    setHasLoadedShared(false);
+    setActiveTab('shared-letter');
     try {
       const letter = await fetchLetter(id);
       if (letter) {
         setSharedLetter(letter);
-        setActiveTab('shared-letter');
-        setIsEnvelopeOpened(false);
+        // Shared links open directly to the letter. Password-protected links
+        // stay on the password gate until the recipient unlocks them.
+        setIsEnvelopeOpened(!letter.hasPassword || !letter.password);
         // Start Kalapastangan by fitterkarma for receiver
         kalapastanganAudio.play();
         romanticAudio.playTheme(letter.theme);
         // Mark as opened
-        await markLetterOpened(id);
+        // Do not hold the recipient on a loader while recording analytics.
+        void markLetterOpened(id).catch((err) => {
+          console.warn('Could not record letter open:', err);
+        });
       }
     } catch (err) {
       console.error('Failed to load shared letter:', err);
     } finally {
       setIsLoadingShared(false);
+      setHasLoadedShared(true);
     }
   };
 
@@ -145,6 +153,19 @@ export default function App() {
   // Check if current URL is a recipient shared link
   const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
   const isRecipientUrl = Boolean(params?.get('letter') || (typeof window !== 'undefined' && window.location.pathname.includes('/love/')));
+
+  // A recipient link is public and must never wait for creator auth to resolve.
+  // Keep the first render in a small loading state while the letter request is in flight.
+  if (isRecipientUrl && (isLoadingShared || !hasLoadedShared)) {
+    return (
+      <div className="min-h-screen bg-neutral-950 text-white flex items-center justify-center font-sans-clean">
+        <div className="text-center animate-fade-in">
+          <GothicLogo size="sm" showSubtitle={false} />
+          <p className="mt-4 text-xs text-rose-300 font-cinzel tracking-widest">Opening your love letter...</p>
+        </div>
+      </div>
+    );
+  }
 
   // While checking initial Firebase auth state, show romantic sanctuary loader (if not opening a shared recipient letter)
   if (isAuthInitializing && !isRecipientUrl) {

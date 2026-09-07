@@ -141,7 +141,20 @@ export async function createLetter(letter: Partial<LetterData>): Promise<LetterD
 }
 
 export async function fetchLetter(id: string): Promise<LetterData | null> {
-  // Try Firestore first
+  // Keep recipient links fast even when Firestore is slow to establish a connection.
+  // Firestore remains the fallback of record when the app API is unavailable.
+  try {
+    const res = await fetch(`/api/letters/${id}`, { signal: AbortSignal.timeout(2500) });
+    if (res.ok) {
+      const data: LetterData = await res.json();
+      saveLocalLetter(data);
+      return data;
+    }
+  } catch {
+    // Continue with Firestore.
+  }
+
+  // Try Firestore next
   try {
     const fromFirestore = await getLetterFromFirestore(id);
     if (fromFirestore) {
@@ -150,18 +163,6 @@ export async function fetchLetter(id: string): Promise<LetterData | null> {
     }
   } catch (err) {
     console.warn('Firestore fetch error:', err);
-  }
-
-  // Next try backend API
-  try {
-    const res = await fetch(`/api/letters/${id}`);
-    if (res.ok) {
-      const data: LetterData = await res.json();
-      saveLocalLetter(data);
-      return data;
-    }
-  } catch {
-    // Non-blocking
   }
 
   // Fallback to local storage
@@ -207,20 +208,31 @@ export async function submitRecipientResponse(id: string, reactionEmoji: string,
     respondedAt: new Date().toISOString()
   };
 
-  // Sync to Firestore
-  try {
-    await submitLetterResponseToFirestore(id, response);
-  } catch (err) {
+  // Firestore is the source of truth for the creator's live dashboard.
+  let firestoreUpdated: LetterData | null = null;
+  const firestoreWrite = submitLetterResponseToFirestore(id, response).catch((err) => {
     console.warn('Firestore response sync warning:', err);
+    return null;
+  });
+  firestoreUpdated = await Promise.race([
+    firestoreWrite,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000))
+  ]);
+
+  if (firestoreUpdated) {
+    saveLocalLetter(firestoreUpdated);
   }
 
+  // Keep the server-side fallback in sync, but do not let it replace newer
+  // Firestore data or hold the recipient UI open indefinitely.
   try {
     const res = await fetch(`/api/letters/${id}/respond`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reactionEmoji, message })
+      body: JSON.stringify({ reactionEmoji, message }),
+      signal: AbortSignal.timeout(2500)
     });
-    if (res.ok) {
+    if (res.ok && !firestoreUpdated) {
       const data = await res.json();
       saveLocalLetter(data);
       return data;
@@ -228,6 +240,8 @@ export async function submitRecipientResponse(id: string, reactionEmoji: string,
   } catch {
     // Non-blocking
   }
+
+  if (firestoreUpdated) return firestoreUpdated;
 
   const local = getLocalLetters().find((l) => l.id === id);
   if (local) {

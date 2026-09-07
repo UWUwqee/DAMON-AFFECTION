@@ -117,6 +117,20 @@ export const LetterPresentation: React.FC<Props> = ({
   const handleApprove = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
+    const optimisticLetter: LetterData = {
+      ...currentLetter,
+      status: 'approved',
+      recipientResponse: {
+        approved: true,
+        reactionEmoji: selectedReaction || '❤️',
+        message: approvalNote || 'I accept with all my heart ❤️',
+        respondedAt: new Date().toISOString()
+      }
+    };
+
+    // Update the screen immediately while the cloud write completes.
+    setCurrentLetter(optimisticLetter);
+    onUpdateLetter?.(optimisticLetter);
     try {
       romanticAudio.playApprovalChime();
       setShowCelebration(true);
@@ -129,7 +143,7 @@ export const LetterPresentation: React.FC<Props> = ({
 
       if (updated) {
         setCurrentLetter(updated);
-        if (onUpdateLetter) onUpdateLetter(updated);
+        onUpdateLetter?.(updated);
       }
     } catch (err) {
       console.error(err);
@@ -372,73 +386,6 @@ export const LetterPresentation: React.FC<Props> = ({
             ) : (
               /* Interactive Recipient Heart Seal Card (Matches exact design from user image) */
               <div className="max-w-xl mx-auto text-center">
-                {/* The Sender's Full Love Letter - Visible right on response page */}
-                <div className="mb-8 p-6 sm:p-8 rounded-2xl bg-white/80 dark:bg-black/40 border border-rose-200/80 dark:border-rose-900/40 shadow-sm text-left">
-                  <div className="flex items-center justify-between text-xs uppercase tracking-widest text-rose-600 dark:text-rose-400 font-cinzel font-bold mb-4 pb-2.5 border-b border-rose-200/60 dark:border-rose-800/40">
-                    <div className="flex items-center gap-1.5">
-                      <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" />
-                      <span>Letter from {currentLetter.senderName || 'Yours Always'}</span>
-                    </div>
-                    {currentLetter.title && (
-                      <span className="font-serif italic font-normal text-neutral-600 dark:text-neutral-300 normal-case">
-                        "{currentLetter.title}"
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Attached photo if creator uploaded one */}
-                  {currentLetter.imageUrl && (
-                    <div className="mb-5 flex flex-col items-center">
-                      <img
-                        src={currentLetter.imageUrl}
-                        alt="Letter attachment"
-                        className="max-h-72 w-auto rounded-xl object-contain shadow-md border border-rose-200/60"
-                        referrerPolicy="no-referrer"
-                      />
-                      {currentLetter.imageCaption && (
-                        <span className="text-xs text-neutral-600 dark:text-neutral-300 italic mt-1.5 font-serif text-center">
-                          {currentLetter.imageCaption}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* All written letter pages */}
-                  <div className={`text-base sm:text-lg leading-relaxed whitespace-pre-line text-neutral-900 dark:text-neutral-100 ${themeConfig.fontFamily}`}>
-                    {writtenPages.map((page, pIdx) => (
-                      <div key={pIdx} className={pIdx > 0 ? "mt-6 pt-5 border-t border-rose-100 dark:border-rose-900/30" : ""}>
-                        {page.title && (
-                          <div className="text-sm font-semibold font-cinzel text-rose-600 dark:text-rose-400 mb-2">
-                            {page.title}
-                          </div>
-                        )}
-                        {page.imageUrl && page.imageUrl !== currentLetter.imageUrl && (
-                          <div className="my-4 flex flex-col items-center">
-                            <img
-                              src={page.imageUrl}
-                              alt="Page attachment"
-                              className="max-h-64 rounded-xl object-contain shadow-sm"
-                              referrerPolicy="no-referrer"
-                            />
-                            {page.imageCaption && (
-                              <span className="text-xs text-neutral-500 italic mt-1 text-center">{page.imageCaption}</span>
-                            )}
-                          </div>
-                        )}
-                        <p className="select-text">{page.content}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Creator Sign-off */}
-                  <div className="mt-6 pt-4 border-t border-rose-200/50 dark:border-rose-900/30 text-right">
-                    <div className="text-xs text-neutral-500 dark:text-neutral-400 font-cinzel tracking-wider uppercase">Forever Yours,</div>
-                    <div className="text-xl font-vibes text-neutral-900 dark:text-neutral-100 font-semibold mt-0.5">
-                      {currentLetter.senderName || 'Yours Always'}
-                    </div>
-                  </div>
-                </div>
-
                 {/* Header Badge */}
                 <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-400 text-xs font-medium mb-3 font-cinzel">
                   <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500 animate-pulse" />
