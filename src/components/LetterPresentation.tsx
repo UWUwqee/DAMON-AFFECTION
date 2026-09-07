@@ -79,6 +79,12 @@ export const LetterPresentation: React.FC<Props> = ({
     }
   }, [currentLetter.theme, currentLetter.musicEnabled]);
 
+  useEffect(() => {
+    if (!showCelebration) return;
+    const timeout = window.setTimeout(() => setShowCelebration(false), 6500);
+    return () => window.clearTimeout(timeout);
+  }, [showCelebration]);
+
   const toggleMusic = () => {
     const nextState = romanticAudio.toggle(currentLetter.theme);
     setIsPlayingMusic(nextState);

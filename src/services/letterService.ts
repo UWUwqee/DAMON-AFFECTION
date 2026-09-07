@@ -283,10 +283,34 @@ export async function getCreatorLetters(): Promise<LetterData[]> {
 
   const local = getLocalLetters();
   const map = new Map<string, LetterData>();
+  const mergeLetter = (incoming: LetterData) => {
+    const existing = map.get(incoming.id);
+    if (!existing) {
+      map.set(incoming.id, incoming);
+      return;
+    }
 
-  local.forEach((l) => map.set(l.id, l));
-  serverLetters.forEach((l) => map.set(l.id, l));
-  firestoreLetters.forEach((l) => map.set(l.id, l));
+    // A response is more valuable than an older snapshot without one.
+    // This prevents a stale Firestore/API read from hiding a recipient reply.
+    if (existing.recipientResponse && !incoming.recipientResponse) return;
+    if (!existing.recipientResponse && incoming.recipientResponse) {
+      map.set(incoming.id, incoming);
+      return;
+    }
+
+    if (existing.recipientResponse && incoming.recipientResponse) {
+      const existingTime = new Date(existing.recipientResponse.respondedAt).getTime();
+      const incomingTime = new Date(incoming.recipientResponse.respondedAt).getTime();
+      if (incomingTime >= existingTime) map.set(incoming.id, incoming);
+      return;
+    }
+
+    map.set(incoming.id, incoming);
+  };
+
+  local.forEach(mergeLetter);
+  serverLetters.forEach(mergeLetter);
+  firestoreLetters.forEach(mergeLetter);
 
   const combined = Array.from(map.values()).sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -318,17 +342,30 @@ export function subscribeToLiveLetters(
   if (creatorId) {
     firestoreUnsub = subscribeToLettersByCreator(creatorId, (cloudLetters) => {
       const map = new Map<string, LetterData>();
-      cloudLetters.forEach((l) => map.set(l.id, l));
+      const mergeLetter = (incoming: LetterData) => {
+        const existing = map.get(incoming.id);
+        if (!existing || (!existing.recipientResponse && incoming.recipientResponse)) {
+          map.set(incoming.id, incoming);
+          return;
+        }
+        if (existing.recipientResponse && incoming.recipientResponse) {
+          const existingTime = new Date(existing.recipientResponse.respondedAt).getTime();
+          const incomingTime = new Date(incoming.recipientResponse.respondedAt).getTime();
+          if (incomingTime >= existingTime) map.set(incoming.id, incoming);
+        }
+      };
+
+      cloudLetters.forEach(mergeLetter);
 
       // Also merge any local letters and save
       const local = getLocalLetters();
       local.forEach((loc) => {
-        if (!map.has(loc.id)) {
+        if (!map.has(loc.id) || (!map.get(loc.id)?.recipientResponse && loc.recipientResponse)) {
           if (!loc.creatorId || loc.creatorId === creatorId) {
             loc.creatorId = creatorId;
             saveLetterToFirestore(loc, creatorId).catch(() => {});
           }
-          map.set(loc.id, loc);
+          mergeLetter(loc);
         }
       });
 
