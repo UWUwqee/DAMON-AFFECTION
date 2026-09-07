@@ -72,7 +72,9 @@ export const CreatorDashboard: React.FC<Props> = ({
 
   const totalLetters = letters.length;
   const approvedLetters = letters.filter((l) => l.recipientResponse?.approved === true || l.status === 'approved').length;
-  const openedLetters = letters.filter((l) => l.status === 'opened').length;
+  const openedLetters = letters.filter((l) =>
+    (l.viewCount || 0) > 0 || l.status === 'opened' || l.status === 'approved' || l.status === 'declined'
+  ).length;
   const totalViews = letters.reduce((acc, l) => acc + (l.viewCount || 0), 0);
 
   return (
