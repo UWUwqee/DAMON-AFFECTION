@@ -13,6 +13,50 @@ import {
 const CREATOR_TOKEN_KEY = 'affectionate_link_creator_token';
 const LOCAL_LETTERS_KEY = 'affectionate_link_local_letters';
 
+// Real-time live listeners registry
+type LiveLettersCallback = (letters: LetterData[]) => void;
+const liveListeners = new Set<LiveLettersCallback>();
+
+// Cross-tab broadcast channel for instant multi-window/tab sync
+const syncChannel = typeof window !== 'undefined' && 'BroadcastChannel' in window
+  ? new BroadcastChannel('damons_affection_sync_channel')
+  : null;
+
+if (syncChannel) {
+  syncChannel.onmessage = (e) => {
+    if (e.data?.type === 'LETTERS_UPDATED') {
+      const current = getLocalLetters();
+      liveListeners.forEach((cb) => {
+        try { cb(current); } catch (err) { console.error(err); }
+      });
+    }
+  };
+}
+
+// Window storage listener for cross-tab sync fallback
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === LOCAL_LETTERS_KEY) {
+      const current = getLocalLetters();
+      liveListeners.forEach((cb) => {
+        try { cb(current); } catch (err) { console.error(err); }
+      });
+    }
+  });
+}
+
+export function notifyLiveSubscribers(letters?: LetterData[]) {
+  const list = letters || getLocalLetters();
+  liveListeners.forEach((cb) => {
+    try { cb(list); } catch (err) { console.error(err); }
+  });
+  if (syncChannel) {
+    try {
+      syncChannel.postMessage({ type: 'LETTERS_UPDATED' });
+    } catch {}
+  }
+}
+
 export function getOrCreateCreatorToken(): string {
   let token = localStorage.getItem(CREATOR_TOKEN_KEY);
   if (!token) {
@@ -41,6 +85,7 @@ export function saveLocalLetter(letter: LetterData) {
       current.unshift(letter);
     }
     localStorage.setItem(LOCAL_LETTERS_KEY, JSON.stringify(current));
+    notifyLiveSubscribers(current);
   } catch (err) {
     console.error('Error saving local letter:', err);
   }
@@ -235,44 +280,68 @@ export function subscribeToLiveLetters(
   creatorId: string | undefined,
   callback: (letters: LetterData[]) => void
 ): () => void {
-  // 1. Send cached/local letters immediately
+  // 1. Register listener for immediate synchronous notifications
+  liveListeners.add(callback);
+
+  // 2. Send cached/local letters immediately
   const initialLocal = getLocalLetters();
   if (initialLocal.length > 0) {
     callback(initialLocal);
   }
 
-  if (!creatorId) {
-    return () => {};
+  // 3. Perform immediate initial fetch from server & cloud
+  getCreatorLetters().then((fresh) => {
+    callback(fresh);
+  }).catch(() => {});
+
+  // 4. Subscribe to real-time Firestore updates if creatorId is present
+  let firestoreUnsub: (() => void) | null = null;
+  if (creatorId) {
+    firestoreUnsub = subscribeToLettersByCreator(creatorId, (cloudLetters) => {
+      const map = new Map<string, LetterData>();
+      cloudLetters.forEach((l) => map.set(l.id, l));
+
+      // Also merge any local letters and save
+      const local = getLocalLetters();
+      local.forEach((loc) => {
+        if (!map.has(loc.id)) {
+          if (!loc.creatorId || loc.creatorId === creatorId) {
+            loc.creatorId = creatorId;
+            saveLetterToFirestore(loc, creatorId).catch(() => {});
+          }
+          map.set(loc.id, loc);
+        }
+      });
+
+      const combined = Array.from(map.values()).sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      localStorage.setItem(LOCAL_LETTERS_KEY, JSON.stringify(combined));
+      callback(combined);
+    });
   }
 
-  // 2. Subscribe to real-time Firestore updates
-  const unsubscribe = subscribeToLettersByCreator(creatorId, (cloudLetters) => {
-    const map = new Map<string, LetterData>();
-    cloudLetters.forEach((l) => map.set(l.id, l));
+  // 5. Background live poll every 3.5 seconds to guarantee 100% live status and responses
+  const pollInterval = setInterval(() => {
+    getCreatorLetters().then((fresh) => {
+      callback(fresh);
+    }).catch(() => {});
+  }, 3500);
 
-    // Also merge any local letters and save
-    const local = getLocalLetters();
-    local.forEach((loc) => {
-      if (!map.has(loc.id)) {
-        if (!loc.creatorId || loc.creatorId === creatorId) {
-          loc.creatorId = creatorId;
-          saveLetterToFirestore(loc, creatorId).catch(() => {});
-        }
-        map.set(loc.id, loc);
-      }
-    });
-
-    const combined = Array.from(map.values()).sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-    localStorage.setItem(LOCAL_LETTERS_KEY, JSON.stringify(combined));
-    callback(combined);
-  });
-
-  return unsubscribe;
+  return () => {
+    liveListeners.delete(callback);
+    if (firestoreUnsub) {
+      firestoreUnsub();
+    }
+    clearInterval(pollInterval);
+  };
 }
 
 export async function deleteLetter(id: string): Promise<void> {
+  const current = getLocalLetters().filter((l) => l.id !== id);
+  localStorage.setItem(LOCAL_LETTERS_KEY, JSON.stringify(current));
+  notifyLiveSubscribers(current);
+
   try {
     await deleteLetterFromFirestore(id);
   } catch {
@@ -284,9 +353,6 @@ export async function deleteLetter(id: string): Promise<void> {
   } catch {
     // Non-blocking
   }
-
-  const current = getLocalLetters().filter((l) => l.id !== id);
-  localStorage.setItem(LOCAL_LETTERS_KEY, JSON.stringify(current));
 }
 
 export async function requestRomanticSpark(prompt: string, mood: string, recipientName: string): Promise<string> {

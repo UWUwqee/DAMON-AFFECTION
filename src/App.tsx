@@ -27,21 +27,14 @@ export default function App() {
   const [selectedThemeForEditor, setSelectedThemeForEditor] = useState<ThemeId>('blooming-heart');
   const [isLoadingShared, setIsLoadingShared] = useState(false);
   const [currentUser, setCurrentUser] = useState<CreatorUser | null>(null);
+  const [isAuthInitializing, setIsAuthInitializing] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  // Subscribe to Firebase Auth state & pop up Auth screen before user enters mainscreen
+  // Subscribe to Firebase Auth state
   useEffect(() => {
     const unsubscribe = subscribeToAuth((user) => {
       setCurrentUser(user);
-      
-      // Check if user is opening a shared recipient link
-      const params = new URLSearchParams(window.location.search);
-      const isRecipientLink = Boolean(params.get('letter') || window.location.pathname.includes('/love/'));
-      
-      // If user is entering mainscreen and not logged in, pop up Auth screen immediately
-      if (!user && !isRecipientLink) {
-        setShowAuthModal(true);
-      }
+      setIsAuthInitializing(false);
     });
     return () => unsubscribe();
   }, []);
@@ -118,6 +111,9 @@ export default function App() {
   };
 
   const handleOpenRecipientMode = (letterId: string) => {
+    try {
+      window.history.pushState({}, '', `/?letter=${letterId}`);
+    } catch {}
     loadSharedLetter(letterId);
   };
 
@@ -137,6 +133,34 @@ export default function App() {
     setActiveTab('create');
   };
 
+  const handleSignOut = async () => {
+    try {
+      await logoutCreator();
+    } catch (e) {
+      console.warn(e);
+    }
+    setCurrentUser(null);
+  };
+
+  // Check if current URL is a recipient shared link
+  const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const isRecipientUrl = Boolean(params?.get('letter') || (typeof window !== 'undefined' && window.location.pathname.includes('/love/')));
+
+  // While checking initial Firebase auth state, show romantic sanctuary loader (if not opening a shared recipient letter)
+  if (isAuthInitializing && !isRecipientUrl) {
+    return (
+      <div className="min-h-screen bg-[#0c0d12] text-white flex flex-col items-center justify-center font-sans-clean">
+        <div className="flex flex-col items-center gap-4 animate-fade-in">
+          <GothicLogo size="lg" showSubtitle={true} />
+          <div className="flex items-center gap-2 text-xs text-rose-400 font-cinzel tracking-widest mt-4">
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+            <span>Entering Damon’s Sanctuary...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // If in recipient / shared-letter mode or full preview mode:
   if (activeTab === 'shared-letter' || activeTab === 'preview-full') {
     const letterToRender = sharedLetter;
@@ -151,7 +175,10 @@ export default function App() {
             <h2 className="text-2xl font-cinzel text-rose-400 mb-2">Love Letter Not Found</h2>
             <p className="text-xs text-neutral-400 mb-4 font-sans-clean">This link might have expired or is incorrect.</p>
             <button
-              onClick={() => setActiveTab('create')}
+              onClick={() => {
+                window.history.pushState({}, '', window.location.pathname.replace(/\/love\/.*$/, '/').replace(/\?.*$/, ''));
+                setActiveTab('create');
+              }}
               className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-cinzel font-semibold text-white tracking-wider"
             >
               Go to Damon’s Affection Home
@@ -192,11 +219,8 @@ export default function App() {
             <button
               onClick={() => {
                 // Clear URL param if going home
-                window.history.pushState({}, '', window.location.pathname);
+                window.history.pushState({}, '', window.location.pathname.replace(/\/love\/.*$/, '/').replace(/\?.*$/, ''));
                 setActiveTab('create');
-                if (!currentUser) {
-                  setShowAuthModal(true);
-                }
               }}
               className="px-3.5 py-2 rounded-full bg-black/80 backdrop-blur-md border border-rose-900/60 text-xs text-rose-300 hover:text-white transition-colors shadow-lg flex items-center gap-2 font-cinzel"
             >
@@ -224,23 +248,35 @@ export default function App() {
     );
   }
 
+  // MANDATORY AUTH GATE: Users must sign in on auth screen before entering mainscreen or creating a letter
+  if (!currentUser) {
+    return (
+      <AuthScreen
+        onSuccess={(user) => {
+          setCurrentUser(user);
+        }}
+      />
+    );
+  }
+
   // Creator & Home Navigation Layout
   return (
     <div className="min-h-screen bg-[#fcf9f6] dark:bg-[#0c0d12] text-neutral-900 dark:text-neutral-100 flex flex-col transition-colors duration-500">
       
       {/* Top Main Navigation Bar */}
-      <header className="sticky top-0 z-40 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-md border-b border-neutral-200/80 dark:border-neutral-800/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <header className="sticky top-0 z-40 bg-white/85 dark:bg-neutral-950/85 backdrop-blur-md border-b border-neutral-200/80 dark:border-neutral-800/80">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
           
           {/* Gothic Brand Logo */}
           <div 
             onClick={() => setActiveTab('create')}
-            className="cursor-pointer group select-none"
+            className="cursor-pointer group select-none shrink-0"
           >
-            <GothicLogo size="md" showSubtitle={true} />
+            <GothicLogo size="sm" showSubtitle={false} className="sm:hidden" />
+            <GothicLogo size="md" showSubtitle={false} className="hidden sm:flex" />
           </div>
 
-          {/* Center Navigation Links */}
+          {/* Desktop & Tablet Center Navigation Links */}
           <nav className="hidden md:flex items-center gap-1 font-cinzel text-xs font-semibold tracking-wider">
             <button
               onClick={() => setActiveTab('create')}
@@ -278,11 +314,10 @@ export default function App() {
             </button>
           </nav>
 
-          {/* Right Action Button */}
-          <div className="flex items-center gap-2">
-            {/* User Account / Auth Button */}
-            {currentUser ? (
-              <div className="flex items-center gap-1.5 p-1 sm:px-3 sm:py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-xs font-sans-clean">
+          {/* Right Action Button & User Info */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {currentUser && (
+              <div className="flex items-center gap-1.5 px-2 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-xs font-sans-clean">
                 {currentUser.photoURL ? (
                   <img
                     src={currentUser.photoURL}
@@ -292,51 +327,32 @@ export default function App() {
                 ) : (
                   <UserIcon className="w-4 h-4 text-rose-500" />
                 )}
-                <span className="font-medium max-w-[100px] sm:max-w-[130px] truncate hidden sm:inline text-neutral-800 dark:text-neutral-200">
-                  {currentUser.displayName || currentUser.email}
+                <span className="font-medium max-w-[80px] sm:max-w-[130px] truncate text-[11px] sm:text-xs text-neutral-800 dark:text-neutral-200">
+                  {currentUser.displayName || currentUser.email?.split('@')[0]}
                 </span>
                 <button
-                  onClick={() => logoutCreator()}
+                  onClick={handleSignOut}
                   title="Sign Out"
                   className="p-1 rounded-lg text-neutral-400 hover:text-rose-500 transition-colors"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                 </button>
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowAuthModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-neutral-300 dark:border-neutral-700 hover:border-rose-500 text-neutral-700 dark:text-neutral-200 hover:text-rose-500 text-xs font-semibold font-cinzel transition-colors"
-              >
-                <LogIn className="w-3.5 h-3.5 text-rose-500" />
-                <span className="hidden sm:inline">Sign In / Connect</span>
-                <span className="sm:hidden">Sign In</span>
-              </button>
             )}
 
             <button
-              onClick={() => setActiveTab('dashboard')}
-              className="md:hidden p-2 rounded-xl text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-              title="Dashboard"
-            >
-              <LayoutDashboard className="w-5 h-5" />
-            </button>
-
-            <button
               onClick={() => setActiveTab('create')}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-rose-700 via-rose-600 to-red-600 hover:from-rose-600 hover:to-red-500 text-white text-xs font-semibold font-cinzel tracking-wider shadow-md shadow-rose-900/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
+              className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-700 via-rose-600 to-red-600 hover:from-rose-600 hover:to-red-500 text-white text-xs font-semibold font-cinzel tracking-wider shadow-md shadow-rose-900/30 hover:scale-[1.02] active:scale-[0.98] transition-all shrink-0"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">New Letter</span>
-              <span className="sm:hidden">Write</span>
+              <span>New Letter</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* Main Content Body */}
-      <main className="flex-1">
+      {/* Main Content Body (with bottom padding for mobile navigation bar) */}
+      <main className="flex-1 pb-24 md:pb-8">
         {activeTab === 'create' && (
           <LetterEditor
             initialLetter={null}
@@ -362,6 +378,51 @@ export default function App() {
           <ThemeGalleryView onSelectThemeToCreate={handleSelectThemeFromGallery} />
         )}
       </main>
+
+      {/* Mobile Bottom Navigation Bar (Optimized for iPhone / Android / Handhelds) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-neutral-950/95 backdrop-blur-xl border-t border-neutral-800/80 px-2 py-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] shadow-2xl flex items-center justify-around">
+        <button
+          onClick={() => setActiveTab('create')}
+          className={`flex flex-col items-center justify-center py-1 px-4 rounded-xl text-[11px] font-sans-clean font-semibold transition-all ${
+            activeTab === 'create'
+              ? 'text-rose-400 font-bold'
+              : 'text-neutral-400 hover:text-white'
+          }`}
+        >
+          <div className={`p-1.5 rounded-lg mb-0.5 ${activeTab === 'create' ? 'bg-rose-500/20 text-rose-400' : ''}`}>
+            <Plus className="w-4 h-4" />
+          </div>
+          <span>Write</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('dashboard')}
+          className={`flex flex-col items-center justify-center py-1 px-4 rounded-xl text-[11px] font-sans-clean font-semibold transition-all ${
+            activeTab === 'dashboard'
+              ? 'text-rose-400 font-bold'
+              : 'text-neutral-400 hover:text-white'
+          }`}
+        >
+          <div className={`p-1.5 rounded-lg mb-0.5 ${activeTab === 'dashboard' ? 'bg-rose-500/20 text-rose-400' : ''}`}>
+            <LayoutDashboard className="w-4 h-4" />
+          </div>
+          <span>Dashboard</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('gallery')}
+          className={`flex flex-col items-center justify-center py-1 px-4 rounded-xl text-[11px] font-sans-clean font-semibold transition-all ${
+            activeTab === 'gallery'
+              ? 'text-rose-400 font-bold'
+              : 'text-neutral-400 hover:text-white'
+          }`}
+        >
+          <div className={`p-1.5 rounded-lg mb-0.5 ${activeTab === 'gallery' ? 'bg-rose-500/20 text-rose-400' : ''}`}>
+            <Palette className="w-4 h-4" />
+          </div>
+          <span>Moods</span>
+        </button>
+      </nav>
 
       {/* Auth Modal for Creators (Register / Login / Google) */}
       <AuthModal

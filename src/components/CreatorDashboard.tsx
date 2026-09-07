@@ -47,9 +47,18 @@ export const CreatorDashboard: React.FC<Props> = ({
     };
   }, [currentUser?.uid]);
 
-  const handleCopy = (id: string) => {
+  const handleCopy = async (id: string) => {
     const url = `${window.location.origin}/?letter=${id}`;
-    navigator.clipboard.writeText(url);
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      const textArea = document.createElement('textarea');
+      textArea.value = url;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    }
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
@@ -111,7 +120,7 @@ export const CreatorDashboard: React.FC<Props> = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-cinzel font-semibold text-neutral-900 dark:text-white">
-                Live Cloud Sync Active (damons-affection)
+                Live Cloud Sync Active
               </span>
               <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-sans-clean font-semibold">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />

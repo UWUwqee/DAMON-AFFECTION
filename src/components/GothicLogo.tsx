@@ -53,11 +53,11 @@ export const GothicLogo: React.FC<Props> = ({
       <div className="flex flex-col text-left">
         <div className="flex items-center gap-1.5">
           <span className={`font-cinzel tracking-wider font-extrabold ${
-            isSmall ? 'text-base' : isLarge ? 'text-2xl sm:text-3xl' : 'text-xl sm:text-2xl'
-          } text-neutral-900 dark:text-neutral-100 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors leading-tight drop-shadow-sm`}>
+            isSmall ? 'text-base sm:text-lg' : isLarge ? 'text-2xl sm:text-3xl' : 'text-xl sm:text-2xl'
+          } text-white drop-shadow-[0_2px_12px_rgba(244,63,94,0.45)] group-hover:text-rose-200 transition-colors leading-tight whitespace-nowrap`}>
             Damon’s Affection
           </span>
-          <span className="text-rose-600 dark:text-rose-400 text-xs sm:text-sm font-serif">†</span>
+          <span className="text-rose-500 group-hover:text-rose-400 text-xs sm:text-sm font-serif drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]">†</span>
         </div>
 
         {/* Subtitle removed as requested */}

@@ -21,12 +21,15 @@ interface LetterPage {
 interface LetterData {
   id: string;
   creatorToken: string;
+  creatorId?: string;
   theme: string;
   recipientName: string;
   senderName: string;
   date: string;
   title: string;
   content: string;
+  imageUrl?: string;
+  imageCaption?: string;
   pages?: LetterPage[];
   musicEnabled: boolean;
   soundtrackMood?: string;
@@ -43,12 +46,16 @@ interface LetterData {
 }
 
 const PORT = 3000;
-const DATA_DIR = path.join(process.cwd(), 'data');
+const DATA_DIR = process.env.VERCEL ? path.join('/tmp', 'data') : path.join(process.cwd(), 'data');
 const DATA_FILE = path.join(DATA_DIR, 'letters.json');
 
-// Ensure data directory exists
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+// Ensure data directory exists safely
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+} catch (e) {
+  console.warn('Notice: running in read-only environment, fallback to memory', e);
 }
 
 // In-memory cache backed by file
@@ -61,16 +68,19 @@ const loadLetters = () => {
       letters = JSON.parse(raw);
     }
   } catch (err) {
-    console.error('Failed to load letters from disk:', err);
+    console.warn('Could not load letters from disk (using in-memory cache):', err);
     letters = {};
   }
 };
 
 const saveLetters = () => {
   try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
     fs.writeFileSync(DATA_FILE, JSON.stringify(letters, null, 2), 'utf-8');
   } catch (err) {
-    console.error('Failed to save letters to disk:', err);
+    console.warn('Could not save letters to disk (in-memory cache active):', err);
   }
 };
 
@@ -132,12 +142,15 @@ async function startServer() {
     const newLetter: LetterData = {
       id,
       creatorToken,
+      creatorId: body.creatorId || undefined,
       theme: body.theme || 'blooming-heart',
       recipientName: body.recipientName?.trim() || 'My Sweetheart',
       senderName: body.senderName?.trim() || 'With all my love',
       date: body.date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
       title: body.title?.trim() || 'A Letter for You',
       content: body.content?.trim() || '',
+      imageUrl: body.imageUrl || undefined,
+      imageCaption: body.imageCaption || undefined,
       pages: Array.isArray(body.pages) && body.pages.length > 0 ? body.pages : undefined,
       musicEnabled: body.musicEnabled !== false,
       soundtrackMood: body.soundtrackMood,
@@ -145,15 +158,32 @@ async function startServer() {
       hasPassword: Boolean(body.hasPassword && body.password?.trim()),
       password: body.hasPassword && body.password?.trim() ? body.password.trim() : undefined,
       passwordHint: body.passwordHint?.trim() || undefined,
-      createdAt: new Date().toISOString(),
-      viewCount: 0,
-      status: 'unread'
+      createdAt: body.createdAt || new Date().toISOString(),
+      viewCount: body.viewCount || 0,
+      status: body.status || 'unread'
     };
 
     letters[id] = newLetter;
     saveLetters();
 
     res.status(201).json(newLetter);
+  });
+
+  // Update existing Letter
+  app.put('/api/letters/:id', (req: Request, res: Response) => {
+    const { id } = req.params;
+    const body = req.body;
+    if (!letters[id]) {
+      return res.status(404).json({ error: 'Letter not found' });
+    }
+
+    letters[id] = {
+      ...letters[id],
+      ...body,
+      id
+    };
+    saveLetters();
+    res.json(letters[id]);
   });
 
   // Mark Letter as Opened (view count and status)
@@ -204,7 +234,7 @@ async function startServer() {
   app.get('/api/letters/creator/:creatorToken', (req: Request, res: Response) => {
     const { creatorToken } = req.params;
     const creatorLetters = Object.values(letters)
-      .filter((l) => l.creatorToken === creatorToken)
+      .filter((l) => l.creatorToken === creatorToken || l.creatorId === creatorToken)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     res.json(creatorLetters);

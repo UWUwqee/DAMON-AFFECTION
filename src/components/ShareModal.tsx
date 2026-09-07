@@ -26,8 +26,17 @@ export const ShareModal: React.FC<Props> = ({
   // Build the share link using window.location.origin
   const shareUrl = `${window.location.origin}/?letter=${letter.id}`;
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(shareUrl);
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+    } catch {
+      const textArea = document.createElement('textarea');
+      textArea.value = shareUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };

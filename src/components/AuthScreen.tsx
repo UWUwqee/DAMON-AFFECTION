@@ -6,7 +6,7 @@ import {
 } from '../services/firebase';
 import { CreatorUser } from '../types';
 import { GothicLogo } from './GothicLogo';
-import { Mail, Lock, User as UserIcon, AlertCircle, Sparkles, Heart, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User as UserIcon, AlertCircle, Sparkles, Heart, ArrowRight } from 'lucide-react';
 
 interface Props {
   onSuccess: (user: CreatorUser) => void;
@@ -97,17 +97,14 @@ export const AuthScreen: React.FC<Props> = ({ onSuccess }) => {
 
       <div className="relative z-10 w-full max-w-md">
         {/* Brand Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-3">
-            <GothicLogo size="lg" showSubtitle={true} />
+        <div className="text-center mb-6">
+          <div className="flex justify-center">
+            <GothicLogo size="lg" showSubtitle={false} />
           </div>
-          <p className="text-xs sm:text-sm text-neutral-400 font-sans-clean max-w-sm mx-auto mt-2">
-            Please sign in to enter the sanctuary, craft enchanted love letters, and track real-time recipient approvals.
-          </p>
         </div>
 
         {/* Auth Card Container */}
-        <div className="rounded-3xl bg-neutral-900/90 backdrop-blur-xl border border-neutral-800 shadow-2xl p-6 sm:p-8">
+        <div className="rounded-3xl bg-neutral-900/90 backdrop-blur-xl border border-neutral-800 shadow-2xl p-5 sm:p-8">
           
           {/* Mode Tabs */}
           <div className="grid grid-cols-2 p-1 rounded-2xl bg-neutral-950 border border-neutral-800/80 mb-6 font-sans-clean text-xs font-semibold">
@@ -193,7 +190,7 @@ export const AuthScreen: React.FC<Props> = ({ onSuccess }) => {
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     placeholder="e.g., Damon"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-neutral-800 bg-neutral-950/80 text-xs text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                    className="w-full pl-10 pr-4 py-3 sm:py-2.5 rounded-2xl border border-neutral-800 bg-neutral-950/80 text-base sm:text-xs text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
                   />
                 </div>
               </div>
@@ -211,7 +208,7 @@ export const AuthScreen: React.FC<Props> = ({ onSuccess }) => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-neutral-800 bg-neutral-950/80 text-xs text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                  className="w-full pl-10 pr-4 py-3 sm:py-2.5 rounded-2xl border border-neutral-800 bg-neutral-950/80 text-base sm:text-xs text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
                 />
               </div>
             </div>
@@ -228,7 +225,7 @@ export const AuthScreen: React.FC<Props> = ({ onSuccess }) => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="At least 6 characters"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-neutral-800 bg-neutral-950/80 text-xs text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                  className="w-full pl-10 pr-4 py-3 sm:py-2.5 rounded-2xl border border-neutral-800 bg-neutral-950/80 text-base sm:text-xs text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
                 />
               </div>
             </div>
@@ -248,12 +245,6 @@ export const AuthScreen: React.FC<Props> = ({ onSuccess }) => {
               )}
             </button>
           </form>
-
-          {/* Secure Firebase cloud reassurance */}
-          <div className="mt-6 pt-4 border-t border-neutral-800 flex items-center justify-center gap-2 text-[11px] text-neutral-500 font-sans-clean">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-            <span>Encrypted & Secured by Firebase (damons-affection)</span>
-          </div>
         </div>
       </div>
     </div>
